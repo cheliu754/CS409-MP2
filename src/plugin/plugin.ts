@@ -9,14 +9,12 @@ export const getEnv = () => ({
   USE_MOCK: (process.env.REACT_APP_USE_MOCK ?? '0') === '1',
 });
 
-export const getBaseName = () => {
-  return '/';
-};
+export const getBaseName = () => process.env.PUBLIC_URL || '/';
 
 const env = getEnv();
 export const http = axios.create({ baseURL: env.BASE_URL, timeout: 12000 });
 http.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  // Use only v4 Bearer token for authentication
+  // Use  Bearer token for authentication
   const token = env.READ_TOKEN;
   if (token) {
     config.headers = { ...(config.headers ?? {}), Authorization: `Bearer ${token}` } as any;
@@ -30,7 +28,7 @@ http.interceptors.response.use(
   (err: any) => Promise.reject({ status: err?.response?.status, message: err?.message ?? 'Network error' })
 );
 
-// Image helpers (sizes per TMDB recommendations)
+// Image helpers
 export const buildImgUrl = (size: 'w92'|'w154'|'w185'|'w342'|'w500'|'w780'|'original', path: string | null | undefined) => {
   if (!path) return '';
   return `${env.IMG_BASE}/${size}${path}`;

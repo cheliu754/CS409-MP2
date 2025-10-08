@@ -1,19 +1,6 @@
 import { useEffect, useState } from 'react';
-import { tmdbGet, getEnv } from '../plugin/plugin';
-import { Item, SortKey, SortOrder } from '../types/types';
-
-
-// Local minimal TMDB types
-interface TmdbMovieRaw {
-  id: number;
-  title?: string;
-  name?: string;
-  overview: string;
-  vote_average: number;
-  popularity: number;
-}
-interface TmdbPaged<T> { page: number; results: T[]; total_pages: number; total_results: number }
-interface TmdbGenre { id: number; name: string }
+import { tmdbGet, getEnv, buildImgUrl } from '../plugin/plugin';
+import { TmdbMovieRaw, TmdbPaged, TmdbGenre, Item, SortKey, SortOrder } from '../types/types';
 
 
 // Helper: mock switch
@@ -42,34 +29,47 @@ export const getGenres = () =>
 
 // Map API to domain Item
 export const mapMovie = (raw: TmdbMovieRaw): Item => {
+  const env = getEnv();
   const title = raw.title || raw.name || '';
+  const poster = raw.poster_path ? { url: buildImgUrl('w342', raw.poster_path), alt: `${title} poster` } : undefined;
+  const backdrop = raw.backdrop_path ? { url: buildImgUrl('w780', raw.backdrop_path), alt: `${title} backdrop` } : undefined;
+  const genres = (
+    raw.genres?.map((g: { id: number; name: string }) => ({ id: g.id, name: g.name }))
+    || raw.genre_ids?.map((id: number) => ({ id, name: '' }))
+    || []
+  ) as { id: number; name: string }[];
   return {
     id: raw.id,
     title,
     overview: raw.overview,
+    poster,
+    backdrop,
+    genres,
+    releaseDate: raw.release_date || raw.first_air_date,
     rating: raw.vote_average,
     popularity: raw.popularity,
   };
 };
 
 
+// Persistence of last result ids
 const IDS_KEY = 'last_ids';
 export const saveIds = (ids: number[]) => { try { localStorage.setItem(IDS_KEY, JSON.stringify(ids)); } catch {} };
 export const loadIds = (): number[] => { try { const s = localStorage.getItem(IDS_KEY); if (!s) return []; const arr = JSON.parse(s); return Array.isArray(arr) ? arr.filter((x: unknown) => typeof x === 'number') : []; } catch { return []; } };
 
 
+// searchApplyClientFilter + searchApplyClientSort
 export const filterByQuery = (items: Item[], q: string) => {
   const k = q.trim().toLowerCase();
   if (!k) return items;
-  return items.filter((i: Item) =>
-    (i.title?.toLowerCase() ?? '').includes(k) ||
-    (i.overview?.toLowerCase() ?? '').includes(k)
-  );
+  return items.filter((i: Item) => i.title.toLowerCase().includes(k) || i.overview.toLowerCase().includes(k));
 };
 
 
-export const filterByGenres = (items: Item[], _ids: number[]) => {
-  return items;
+export const filterByGenres = (items: Item[], ids: number[]) => {
+  if (!ids.length) return items;
+  const set = new Set(ids);
+  return items.filter((i: Item) => i.genres.some((g: { id: number; name: string }) => set.has(g.id)));
 };
 
 
@@ -114,31 +114,15 @@ export const featureFlags = {
 };
 
 
+// Mock data 
 function mockPagedMovies(): TmdbPaged<TmdbMovieRaw> {
   return { page: 1, total_pages: 1, total_results: 3, results: [
-    { id: 1, title: 'Mock One', overview: 'Overview one', vote_average: 7.1, popularity: 123 },
-    { id: 2, title: 'Mock Two', overview: 'Overview two', vote_average: 6.4, popularity: 98 },
-    { id: 3, title: 'Mock Three', overview: 'Overview three', vote_average: 8.3, popularity: 201 },
+    { id: 1, title: 'Mock One', overview: 'Overview one', poster_path: null, backdrop_path: null, genre_ids: [28, 12], vote_average: 7.1, popularity: 123 },
+    { id: 2, title: 'Mock Two', overview: 'Overview two', poster_path: null, backdrop_path: null, genre_ids: [35], vote_average: 6.4, popularity: 98 },
+    { id: 3, title: 'Mock Three', overview: 'Overview three', poster_path: null, backdrop_path: null, genre_ids: [18], vote_average: 8.3, popularity: 201 },
   ] };
 }
 function mockDetail(id: number): TmdbMovieRaw {
-  return { id, title: `Mock #${id}`, overview: 'Mock detail', vote_average: 7.0, popularity: 100 };
+  return { id, title: `Mock #${id}`, overview: 'Mock detail', poster_path: null, backdrop_path: null, genres: [{ id: 28, name: 'Action' }], vote_average: 7.0, popularity: 100 };
 }
 function mockGenres() { return { genres: [ { id: 28, name: 'Action' }, { id: 12, name: 'Adventure' }, { id: 35, name: 'Comedy' }, { id: 18, name: 'Drama' } ] }; }
-
-export const mockItems: Item[] = [
-  {
-    id: 1,
-    title: 'Movie One',
-    poster_path: 'https://via.placeholder.com/150x225?text=Movie+One',
-    release_date: '2022-01-01',
-    overview: 'A sample movie overview.',
-  },
-  {
-    id: 2,
-    title: 'Movie Two',
-    poster_path: 'https://via.placeholder.com/150x225?text=Movie+Two',
-    release_date: '2022-02-01',
-    overview: 'Another sample movie overview.',
-  },
-];
