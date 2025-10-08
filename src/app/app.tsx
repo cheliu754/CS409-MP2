@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
-import { Gallery, SearchBar, Spinner, ErrorState } from '../components/components';
+import { Gallery, SearchBar } from '../components/components';
 import { mockItems, applyClientSort, SORT_FIELDS } from '../functions/utensil';
 import { Item, SortKey, SortOrder } from '../types/types';
 
 export const App = () => {
   const [query, setQuery] = useState('');
-  const [items, setItems] = useState<Item[]>(mockItems);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('title');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  const filtered = items.filter(
+  const filtered = mockItems.filter(
     (item: Item) =>
       item.title?.toLowerCase().includes(query.toLowerCase()) ||
       item.name?.toLowerCase().includes(query.toLowerCase())
@@ -38,11 +35,8 @@ export const App = () => {
         </div>
       </header>
       <main>
-        {loading ? (
-          <Spinner />
-        ) : error ? (
-          <ErrorState message={error} />
-        ) : selected ? (
+        <Gallery items={sorted} onItemClick={item => setSelectedId(item.id)} />
+        {selected && (
           <div className="detail-view">
             <button onClick={() => setSelectedId(null)} style={{ marginBottom: 16 }}>Back</button>
             <h3>{selected.title || selected.name}</h3>
@@ -52,8 +46,6 @@ export const App = () => {
             <p>Rating: {selected.rating}</p>
             <p>Popularity: {selected.popularity}</p>
           </div>
-        ) : (
-          <Gallery items={sorted} onItemClick={item => setSelectedId(item.id)} />
         )}
       </main>
     </div>
