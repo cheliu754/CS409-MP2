@@ -29,7 +29,6 @@ export const getGenres = () =>
 
 // Map API to domain Item
 export const mapMovie = (raw: TmdbMovieRaw): Item => {
-  const env = getEnv();
   const title = raw.title || raw.name || '';
   const poster = raw.poster_path ? { url: buildImgUrl('w342', raw.poster_path), alt: `${title} poster` } : undefined;
   const backdrop = raw.backdrop_path ? { url: buildImgUrl('w780', raw.backdrop_path), alt: `${title} backdrop` } : undefined;
