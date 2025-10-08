@@ -1,22 +1,16 @@
 import React from 'react';
+import { Gallery } from '../components/components';
+import { mockItems } from '../functions/utensil';
 
-export const ListPage = () => (
-  <section className="container" style={{ paddingTop: '2rem' }}>
-    <h1>List</h1>
-    <p>Scaffold view. Search and sort will be added.</p>
-  </section>
-);
+export const ListPage = ({ onItemClick }: { onItemClick?: (item: any) => void }) => <Gallery items={mockItems} onItemClick={onItemClick} />;
 
-export const GalleryPage = () => (
-  <section className="container" style={{ paddingTop: '2rem' }}>
-    <h1>Gallery</h1>
-    <p>Scaffold view. Gallery and filters will be added.</p>
-  </section>
-);
-
-export const DetailPage = () => (
-  <section className="container" style={{ paddingTop: '2rem' }}>
-    <h1>Detail</h1>
-    <p>Scaffold view. Item details and navigation will be added.</p>
-  </section>
+export const DetailPage = ({ item }: { item: any }) => (
+  <div className="detail-view">
+    <h3>{item.title || item.name}</h3>
+    <img src={item.poster_path || item.image} alt={item.title || item.name} style={{ width: 180, height: 270, objectFit: 'cover', background: '#333' }} />
+    <p>{item.release_date}</p>
+    <p>{item.overview}</p>
+    <p>Rating: {item.rating}</p>
+    <p>Popularity: {item.popularity}</p>
+  </div>
 );
